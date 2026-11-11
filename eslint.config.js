@@ -58,6 +58,7 @@ export default [
                 mode: 'typescript',
                 tagNamePreference: {
                     augments: 'extends',
+                    constructor: 'constructor',
                 },
             },
         },

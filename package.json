@@ -1,0 +1,47 @@
+{
+  "name": "eternal-elusion",
+  "version": "0.0.1",
+  "description": "A fast-paced 3D dodging game built with JavaScript and Three.js",
+  "keywords": [
+    "3d",
+    "3d-game",
+    "browser-game",
+    "canvas",
+    "dodge",
+    "dodging-game",
+    "html5",
+    "indie-game",
+    "javascript",
+    "three-js",
+    "threejs"
+  ],
+  "author": "Gergely Bárdos (https://github.com/gergelybardos)",
+  "license": "MIT",
+  "homepage": "https://github.com/gergelybardos/eternal-elusion#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gergelybardos/eternal-elusion.git"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.6.4"
+  },
+  "scripts": {
+    "dev": "vite",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "gh-pages -d dist"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "eslint-plugin-jsdoc": "^64.4.0",
+    "gh-pages": "^6.3.0",
+    "globals": "^17.12.0",
+    "jsdoc": "^4.0.5",
+    "vite": "^8.3.0"
+  }
+}

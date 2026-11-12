@@ -1,3 +1,7 @@
-import './assets/styles/main.css';
+import Game from './Game.js';
 
-console.log('Eternal Elusion initialized.');
+const game = new Game({
+    containerId: 'app',
+});
+
+game.start();

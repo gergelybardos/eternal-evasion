@@ -1,0 +1,34 @@
+# OS-specific system files
+.DS_Store
+Thumbs.db
+
+# IDE settings
+.idea/
+.vscode/
+
+# Vendor packages
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Generated documentation
+docs/
+coverage/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environmental variables
+.env
+.env.*
+*.local
+
+# Temporary files
+*.tmp
+*.bak

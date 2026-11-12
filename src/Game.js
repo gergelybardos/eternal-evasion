@@ -28,13 +28,13 @@ export default class Game {
     #camera;
 
     /** @type {THREE.Mesh|null} */
-    #cube;
+    #playerMesh;
+
+    /** @type {THREE.PointLight|null} */
+    #playerLight;
 
     /** @type {number} */
     #inputX = 0;
-
-    /** @type {number} */
-    #inputY = 0;
 
     /**
      * @constructor
@@ -62,6 +62,9 @@ export default class Game {
         this.#renderer = null;
         this.#scene = null;
         this.#camera = null;
+        this.#playerMesh = null;
+        this.#playerLight = null;
+        this.#inputX = 0;
     }
 
     /**
@@ -99,8 +102,8 @@ export default class Game {
 
         // Scene
         this.#scene = new THREE.Scene();
-        this.#scene.background = new THREE.Color(0xa888888);
-        this.#scene.fog = new THREE.Fog(0xa888888, 2, 8);
+        this.#scene.background = new THREE.Color(0xbfbfbf);
+        this.#scene.fog = new THREE.Fog(0xbfbfbf, 1, 100);
 
         // Camera
         this.#camera = new THREE.PerspectiveCamera(
@@ -110,32 +113,51 @@ export default class Game {
             1000,
         );
 
-        this.#camera.position.z = 5;
-        this.#camera.position.y = 2;
+        this.#camera.position.z = 3;
+        this.#camera.position.y = 1.5;
         this.#camera.lookAt(0, 0, 0);
 
         // Game objects
 
-        // Cube
-        const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-        const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        // Player
+        const playerGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+        const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x404040 });
 
-        this.#cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-        this.#cube.castShadow = true;
+        this.#playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
+        this.#playerMesh.position.y = -0.25;
+        this.#playerMesh.castShadow = true;
 
-        this.#scene.add(this.#cube);
+        this.#scene.add(this.#playerMesh);
+
+        // Obstacles
+        const OBSTACLE_SPACING_X = 4;
+        const OBSTACLE_SPACING_Y = 20;
+
+        const obstacleGeometry = new THREE.BoxGeometry(1, 1, 1);
+        const obstacleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+
+        for (let i = 1; i <= 10; i++) {
+            for (const direction of [-1, 1]) {
+                const obstacleMesh = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
+
+                obstacleMesh.position.set(direction * OBSTACLE_SPACING_X, 0, -i * OBSTACLE_SPACING_Y);
+                obstacleMesh.castShadow = true;
+
+                this.#scene.add(obstacleMesh);
+            }
+        }
 
         // Ground
         const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
-        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
 
-        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
 
-        ground.rotation.x = -Math.PI / 2;
-        ground.position.y = -0.5;
-        ground.receiveShadow = true;
+        groundMesh.rotation.x = -Math.PI / 2;
+        groundMesh.position.y = -0.5;
+        groundMesh.receiveShadow = true;
 
-        this.#scene.add(ground);
+        this.#scene.add(groundMesh);
 
         // Lighting
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
@@ -149,13 +171,19 @@ export default class Game {
 
         this.#scene.add(directionalLight);
 
+        this.#playerLight = new THREE.PointLight(0xffffff, 50, 50);
+
+        this.#playerLight.position.set(0, 5, 0);
+        this.#playerLight.castShadow = true;
+
+        this.#scene.add(this.#playerLight);
+
         // Controls
 
         this.#container.addEventListener('pointermove', (event) => {
             const clientRect = this.#container.getBoundingClientRect();
 
             this.#inputX = ((event.clientX - clientRect.left) / clientRect.width) * 2 - 1;
-            this.#inputY = ((event.clientY - clientRect.top) / clientRect.height) * 2 - 1;
         });
     }
 
@@ -179,9 +207,19 @@ export default class Game {
      * @returns {void}
      */
     #update(deltaTime) {
-        this.#cube.rotation.y -= deltaTime;
-        this.#cube.position.x += (this.#inputX * 4 - this.#cube.position.x) * 8 * deltaTime;
-        this.#cube.position.z += (this.#inputY * 4 - this.#cube.position.z) * 8 * deltaTime;
+        const MOVEMENT_RANGE = 8;
+        const SMOOTHING = 4;
+
+        this.#playerMesh.rotation.y -= deltaTime;
+
+        const movementDeltaX = (this.#inputX * MOVEMENT_RANGE - this.#playerMesh.position.x) * SMOOTHING * deltaTime;
+
+        this.#playerMesh.position.x += movementDeltaX;
+        this.#playerLight.position.x += movementDeltaX;
+
+        const targetRotation = -this.#inputX * 0.05;
+
+        this.#scene.rotation.z += (targetRotation - this.#scene.rotation.z) * 4 * deltaTime;
     }
 
     /**

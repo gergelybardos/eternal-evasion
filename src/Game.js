@@ -30,6 +30,12 @@ export default class Game {
     /** @type {THREE.Mesh|null} */
     #cube;
 
+    /** @type {number} */
+    #inputX = 0;
+
+    /** @type {number} */
+    #inputY = 0;
+
     /**
      * @constructor
      * @param {object} [config={}]
@@ -142,6 +148,15 @@ export default class Game {
         directionalLight.castShadow = true;
 
         this.#scene.add(directionalLight);
+
+        // Controls
+
+        this.#container.addEventListener('pointermove', (event) => {
+            const clientRect = this.#container.getBoundingClientRect();
+
+            this.#inputX = ((event.clientX - clientRect.left) / clientRect.width) * 2 - 1;
+            this.#inputY = ((event.clientY - clientRect.top) / clientRect.height) * 2 - 1;
+        });
     }
 
     /**
@@ -165,6 +180,8 @@ export default class Game {
      */
     #update(deltaTime) {
         this.#cube.rotation.y -= deltaTime;
+        this.#cube.position.x += (this.#inputX * 4 - this.#cube.position.x) * 8 * deltaTime;
+        this.#cube.position.z += (this.#inputY * 4 - this.#cube.position.z) * 8 * deltaTime;
     }
 
     /**

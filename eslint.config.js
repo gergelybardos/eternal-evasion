@@ -7,7 +7,7 @@ export default [
     jsdoc.configs['flat/recommended'],
     {
         languageOptions: {
-            ecmaVersion: 'latest',
+            ecmaVersion: 2025,
             sourceType: 'module',
             globals: {
                 ...globals.browser,

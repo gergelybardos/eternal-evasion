@@ -4,4 +4,10 @@ const game = new Game({
     containerId: 'app',
 });
 
-game.start();
+document.querySelector('#start-button').addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+
+    await game.start();
+
+    button.remove();
+});

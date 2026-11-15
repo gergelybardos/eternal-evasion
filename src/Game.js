@@ -1,6 +1,7 @@
 import './assets/styles/main.css';
 
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 /**
  * @class
@@ -215,9 +216,9 @@ export default class Game {
             1000,
         );
 
-        this.#camera.position.z = 3;
-        this.#camera.position.y = 1.5;
-        this.#camera.lookAt(0, 0, 0);
+        this.#camera.position.z = 4;
+        this.#camera.position.y = 2;
+        this.#camera.lookAt(0, 1.75, 0);
 
         // -------------------------------------------------------------------------------------------------------------
         // Game objects
@@ -225,8 +226,8 @@ export default class Game {
 
         // Player
 
-        const playerGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
-        const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x404040 });
+        const playerGeometry = new RoundedBoxGeometry(0.5, 0.5, 0.5, 3, 0.025);
+        const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x323232 });
 
         this.#playerMesh = new THREE.Mesh(playerGeometry, playerMaterial);
         this.#playerMesh.position.y = -0.25;
@@ -236,8 +237,12 @@ export default class Game {
 
         // Obstacles
 
-        this.#obstacleGeometry = new THREE.BoxGeometry(1, 1, 1);
-        this.#obstacleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        this.#obstacleGeometry = new RoundedBoxGeometry(1, 1, 1, 3, 0.075);
+        this.#obstacleMaterial = new THREE.MeshStandardMaterial({
+            color: 0xd0d0d0,
+            roughness: 0.85,
+            metalness: 0,
+        });
 
         this.#nextObstacleSpawnZ = -this.#obstacleSpacingZ;
 
@@ -251,7 +256,10 @@ export default class Game {
         // Ground
 
         const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
-        const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 });
+        const groundMaterial = new THREE.MeshStandardMaterial({
+            color: 0x4e4e4e,
+            roughness: 1,
+        });
 
         const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
 
@@ -263,21 +271,33 @@ export default class Game {
 
         // Lighting
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xb0b0b0, 0.4);
 
         this.#scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
 
-        directionalLight.position.set(5, 5, 5);
+        directionalLight.position.set(-5, 10, 5);
         directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.set(2048, 2048);
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.left = -20;
+        directionalLight.shadow.camera.right = 20;
+        directionalLight.shadow.camera.top = 20;
+        directionalLight.shadow.camera.bottom = -20;
+        directionalLight.shadow.bias = -0.0001;
 
         this.#scene.add(directionalLight);
 
-        this.#playerLight = new THREE.PointLight(0xffffff, 50, 50);
+        this.#playerLight = new THREE.PointLight(0xffffff, 60, 30);
 
-        this.#playerLight.position.set(0, 5, 0);
+        this.#playerLight.position.set(0, 5, -5);
         this.#playerLight.castShadow = true;
+        this.#playerLight.shadow.mapSize.set(2048, 2048);
+        this.#playerLight.shadow.camera.near = 0.5;
+        this.#playerLight.shadow.camera.far = 50;
+        this.#playerLight.shadow.bias = -0.0001;
 
         this.#scene.add(this.#playerLight);
 

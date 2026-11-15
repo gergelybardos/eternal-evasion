@@ -38,6 +38,30 @@ export default class Game {
 
     // Game objects
 
+    /** @type {THREE.BoxGeometry|null} */
+    #obstacleGeometry;
+
+    /** @type {THREE.MeshStandardMaterial|null} */
+    #obstacleMaterial;
+
+    /** @type {THREE.Mesh[]} */
+    #obstacles;
+
+    /** @type {number} */
+    #obstacleOffsetX;
+
+    /** @type {number} */
+    #obstacleSpeed;
+
+    /** @type {number} */
+    #obstacleSpacingZ;
+
+    /** @type {number} */
+    #nextObstacleSpawnZ;
+
+    /** @type {number} */
+    #obstacleSpawnFieldLength;
+
     /** @type {THREE.Mesh|null} */
     #playerMesh;
 
@@ -49,10 +73,10 @@ export default class Game {
     /** @type {number} */
     #inputX;
 
-    /** @type {number} */
+    /** @type {number|null} */
     #orientationBeta;
 
-    /** @type {number} */
+    /** @type {number|null} */
     #initialOrientationBeta;
 
     // Observers
@@ -103,14 +127,24 @@ export default class Game {
 
         // Game objects
 
+        this.#obstacleGeometry = null;
+        this.#obstacleMaterial = null;
+        this.#obstacles = [];
+
+        this.#obstacleOffsetX = 0;
+        this.#obstacleSpeed = 20;
+        this.#obstacleSpacingZ = 10;
+        this.#nextObstacleSpawnZ = 0;
+        this.#obstacleSpawnFieldLength = 100;
+
         this.#playerMesh = null;
         this.#playerLight = null;
 
         // Input
 
         this.#inputX = 0;
-        this.#orientationBeta = 0;
-        this.#initialOrientationBeta = 0;
+        this.#orientationBeta = null;
+        this.#initialOrientationBeta = null;
 
         // Observers
 
@@ -194,21 +228,16 @@ export default class Game {
 
         // Obstacles
 
-        const OBSTACLE_SPACING_X = 4;
-        const OBSTACLE_SPACING_Y = 20;
+        this.#obstacleGeometry = new THREE.BoxGeometry(1, 1, 1);
+        this.#obstacleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
 
-        const obstacleGeometry = new THREE.BoxGeometry(1, 1, 1);
-        const obstacleMaterial = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        this.#nextObstacleSpawnZ = -this.#obstacleSpacingZ;
 
-        for (let i = 1; i <= 10; i++) {
-            for (const direction of [-1, 1]) {
-                const obstacleMesh = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
-
-                obstacleMesh.position.set(direction * OBSTACLE_SPACING_X, 0, -i * OBSTACLE_SPACING_Y);
-                obstacleMesh.castShadow = true;
-
-                this.#scene.add(obstacleMesh);
+        while (this.#nextObstacleSpawnZ >= -this.#obstacleSpawnFieldLength) {
+            for (let i = 0; i < 5; i++) {
+                this.#spawnObstacle(THREE.MathUtils.randFloat(-10, 10), this.#nextObstacleSpawnZ);
             }
+            this.#nextObstacleSpawnZ -= this.#obstacleSpacingZ;
         }
 
         // Ground
@@ -287,19 +316,16 @@ export default class Game {
      * @returns {void}
      */
     #update(deltaTime) {
-        const MOVEMENT_RANGE = 5;
-        const SMOOTHING = 8;
+        const MOVEMENT_RANGE = 50;
+        const MOVEMENT_SMOOTHING = 10;
 
-        this.#playerMesh.rotation.y -= deltaTime;
+        const targetObstacleOffsetX = this.#inputX * MOVEMENT_RANGE;
+        this.#obstacleOffsetX += (targetObstacleOffsetX - this.#obstacleOffsetX) * MOVEMENT_SMOOTHING * deltaTime;
 
-        const movementDeltaX = (this.#inputX * MOVEMENT_RANGE - this.#playerMesh.position.x) * SMOOTHING * deltaTime;
+        this.#updateObstacles(deltaTime);
 
-        this.#playerMesh.position.x += movementDeltaX;
-        this.#playerLight.position.x += movementDeltaX;
-
-        const targetRotation = this.#inputX * 0.375;
-
-        this.#scene.rotation.z += (targetRotation - this.#scene.rotation.z) * 4 * deltaTime;
+        const cameraTilt = this.#inputX * 0.375;
+        this.#scene.rotation.z += (cameraTilt - this.#scene.rotation.z) * 4 * deltaTime;
     }
 
     /**
@@ -385,4 +411,63 @@ export default class Game {
             this.#lastTime = performance.now();
         }
     };
+
+    /**
+     * @param {number} x
+     * @param {number} z
+     * @returns {void}
+     */
+    #spawnObstacle(x, z) {
+        const obstacleMesh = new THREE.Mesh(
+            this.#obstacleGeometry,
+            this.#obstacleMaterial,
+        );
+
+        obstacleMesh.position.set(x, 0, z);
+        obstacleMesh.castShadow = true;
+        obstacleMesh.userData.initialX = x;
+
+        this.#scene.add(obstacleMesh);
+        this.#obstacles.push(obstacleMesh);
+    }
+
+    /**
+     * @param {number} deltaTime
+     * @returns {void}
+     */
+    #updateObstacles(deltaTime) {
+        for (let i = this.#obstacles.length - 1; i >= 0; i--) {
+            const obstacle = this.#obstacles[i];
+
+            obstacle.position.z += this.#obstacleSpeed * deltaTime;
+            obstacle.position.x = obstacle.userData.initialX - this.#obstacleOffsetX;
+
+            if (obstacle.position.z > 5) {
+                this.#removeObstacle(obstacle);
+            }
+        }
+
+        this.#nextObstacleSpawnZ += this.#obstacleSpeed * deltaTime;
+
+        while (this.#nextObstacleSpawnZ >= -this.#obstacleSpawnFieldLength) {
+            for (let i = 0; i < 5; i++) {
+                this.#spawnObstacle(THREE.MathUtils.randFloat(-10, 10), this.#nextObstacleSpawnZ);
+            }
+            this.#nextObstacleSpawnZ -= this.#obstacleSpacingZ;
+        }
+    }
+
+    /**
+     * @param {THREE.Mesh} obstacle
+     * @returns {void}
+     */
+    #removeObstacle(obstacle) {
+        this.#scene.remove(obstacle);
+
+        const index = this.#obstacles.indexOf(obstacle);
+
+        if (index !== -1) {
+            this.#obstacles.splice(index, 1);
+        }
+    }
 }

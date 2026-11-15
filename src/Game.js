@@ -73,6 +73,12 @@ export default class Game {
     /** @type {number} */
     #inputX;
 
+    /** @type {boolean} */
+    #leftKeyPressed;
+
+    /** @type {boolean} */
+    #rightKeyPressed;
+
     /** @type {number|null} */
     #orientationBeta;
 
@@ -143,6 +149,8 @@ export default class Game {
         // Input
 
         this.#inputX = 0;
+        this.#leftKeyPressed = false;
+        this.#rightKeyPressed = false;
         this.#orientationBeta = null;
         this.#initialOrientationBeta = null;
 
@@ -283,17 +291,22 @@ export default class Game {
 
         this.#resizeObserver.observe(this.#container);
 
-        if (this.#device.isMobile && this.#device.hasDeviceOrientation) {
-            window.addEventListener('deviceorientation', this.#handleDeviceOrientation);
-        }
-
         document.addEventListener('visibilitychange', this.#handleVisibilityChange);
 
-        this.#container.addEventListener('pointermove', (event) => {
-            const clientRect = this.#container.getBoundingClientRect();
+        if (this.#device.isMobile) {
+            if (this.#device.hasDeviceOrientation) {
+                window.addEventListener('deviceorientation', this.#handleDeviceOrientation);
+            }
 
-            this.#inputX = ((event.clientX - clientRect.left) / clientRect.width) * 2 - 1;
-        });
+            this.#container.addEventListener('pointermove', (event) => {
+                const clientRect = this.#container.getBoundingClientRect();
+
+                this.#inputX = ((event.clientX - clientRect.left) / clientRect.width) * 2 - 1;
+            });
+        } else {
+            window.addEventListener('keydown', this.#handleKeyDown);
+            window.addEventListener('keyup', this.#handleKeyUp);
+        }
     }
 
     /**
@@ -316,11 +329,7 @@ export default class Game {
      * @returns {void}
      */
     #update(deltaTime) {
-        const MOVEMENT_RANGE = 50;
-        const MOVEMENT_SMOOTHING = 10;
-
-        const targetObstacleOffsetX = this.#inputX * MOVEMENT_RANGE;
-        this.#obstacleOffsetX += (targetObstacleOffsetX - this.#obstacleOffsetX) * MOVEMENT_SMOOTHING * deltaTime;
+        this.#obstacleOffsetX += this.#inputX * 20 * deltaTime;
 
         this.#updateObstacles(deltaTime);
 
@@ -377,6 +386,40 @@ export default class Game {
         this.#camera.aspect = width / height;
         this.#camera.updateProjectionMatrix();
     }
+
+    /**
+     * @param {KeyboardEvent} event
+     * @returns {void}
+     */
+    #handleKeyDown = (event) => {
+        if (event.key === 'ArrowLeft') {
+            this.#leftKeyPressed = true;
+        } else if (event.key === 'ArrowRight') {
+            this.#rightKeyPressed = true;
+        } else {
+            return;
+        }
+
+        event.preventDefault();
+
+        this.#inputX = Number(this.#rightKeyPressed) - Number(this.#leftKeyPressed);
+    };
+
+    /**
+     * @param {KeyboardEvent} event
+     * @returns {void}
+     */
+    #handleKeyUp = (event) => {
+        if (event.key === 'ArrowLeft') {
+            this.#leftKeyPressed = false;
+        } else if (event.key === 'ArrowRight') {
+            this.#rightKeyPressed = false;
+        } else {
+            return;
+        }
+
+        this.#inputX = Number(this.#rightKeyPressed) - Number(this.#leftKeyPressed);
+    };
 
     /**
      * @param {DeviceOrientationEvent} event

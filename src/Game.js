@@ -234,8 +234,8 @@ export default class Game {
         this.#nextObstacleSpawnZ = -this.#obstacleSpacingZ;
 
         while (this.#nextObstacleSpawnZ >= -this.#obstacleSpawnFieldLength) {
-            for (let i = 0; i < 5; i++) {
-                this.#spawnObstacle(THREE.MathUtils.randFloat(-10, 10), this.#nextObstacleSpawnZ);
+            for (let i = 0; i < 10; i++) {
+                this.#spawnObstacle(THREE.MathUtils.randFloat(-50, 50), this.#nextObstacleSpawnZ);
             }
             this.#nextObstacleSpawnZ -= this.#obstacleSpacingZ;
         }
@@ -426,6 +426,7 @@ export default class Game {
         obstacleMesh.position.set(x, 0, z);
         obstacleMesh.castShadow = true;
         obstacleMesh.userData.initialX = x;
+        obstacleMesh.userData.spawnOffsetX = this.#obstacleOffsetX;
 
         this.#scene.add(obstacleMesh);
         this.#obstacles.push(obstacleMesh);
@@ -440,7 +441,7 @@ export default class Game {
             const obstacle = this.#obstacles[i];
 
             obstacle.position.z += this.#obstacleSpeed * deltaTime;
-            obstacle.position.x = obstacle.userData.initialX - this.#obstacleOffsetX;
+            obstacle.position.x = obstacle.userData.initialX - (this.#obstacleOffsetX - obstacle.userData.spawnOffsetX);
 
             if (obstacle.position.z > 5) {
                 this.#removeObstacle(obstacle);
@@ -451,7 +452,7 @@ export default class Game {
 
         while (this.#nextObstacleSpawnZ >= -this.#obstacleSpawnFieldLength) {
             for (let i = 0; i < 5; i++) {
-                this.#spawnObstacle(THREE.MathUtils.randFloat(-10, 10), this.#nextObstacleSpawnZ);
+                this.#spawnObstacle(THREE.MathUtils.randFloat(-50, 50), this.#nextObstacleSpawnZ);
             }
             this.#nextObstacleSpawnZ -= this.#obstacleSpacingZ;
         }

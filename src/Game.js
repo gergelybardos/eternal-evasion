@@ -63,6 +63,12 @@ export default class Game {
     /** @type {number} */
     #obstacleSpawnFieldLength;
 
+    /** @type {number} */
+    #obstaclesPerRow;
+
+    /** @type {number} */
+    #obstacleSpawnFieldWidth;
+
     /** @type {THREE.Mesh|null} */
     #playerMesh;
 
@@ -140,9 +146,11 @@ export default class Game {
 
         this.#obstacleOffsetX = 0;
         this.#obstacleSpeed = 20;
-        this.#obstacleSpacingZ = 10;
-        this.#nextObstacleSpawnZ = 0;
-        this.#obstacleSpawnFieldLength = 100;
+        this.#obstacleSpacingZ = 5;
+        this.#nextObstacleSpawnZ = -5;
+        this.#obstacleSpawnFieldLength = 60;
+        this.#obstaclesPerRow = 10;
+        this.#obstacleSpawnFieldWidth = 100;
 
         this.#playerMesh = null;
         this.#playerLight = null;
@@ -247,8 +255,8 @@ export default class Game {
         this.#nextObstacleSpawnZ = -this.#obstacleSpacingZ;
 
         while (this.#nextObstacleSpawnZ >= -this.#obstacleSpawnFieldLength) {
-            for (let i = 0; i < 10; i++) {
-                this.#spawnObstacle(THREE.MathUtils.randFloat(-50, 50), this.#nextObstacleSpawnZ);
+            for (let i = 0; i < this.#obstaclesPerRow; i++) {
+                this.#spawnObstacle(THREE.MathUtils.randFloat(-this.#obstacleSpawnFieldWidth, this.#obstacleSpawnFieldWidth), this.#nextObstacleSpawnZ);
             }
             this.#nextObstacleSpawnZ -= this.#obstacleSpacingZ;
         }
@@ -514,8 +522,8 @@ export default class Game {
         this.#nextObstacleSpawnZ += this.#obstacleSpeed * deltaTime;
 
         while (this.#nextObstacleSpawnZ >= -this.#obstacleSpawnFieldLength) {
-            for (let i = 0; i < 5; i++) {
-                this.#spawnObstacle(THREE.MathUtils.randFloat(-50, 50), this.#nextObstacleSpawnZ);
+            for (let i = 0; i < this.#obstaclesPerRow; i++) {
+                this.#spawnObstacle(THREE.MathUtils.randFloat(-this.#obstacleSpawnFieldWidth, this.#obstacleSpawnFieldWidth), this.#nextObstacleSpawnZ);
             }
             this.#nextObstacleSpawnZ -= this.#obstacleSpacingZ;
         }

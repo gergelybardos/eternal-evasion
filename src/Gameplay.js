@@ -123,7 +123,7 @@ export default class Gameplay {
         this.#obstacles = [];
 
         this.#obstacleOffsetX = 0;
-        this.#obstacleSpeed = 20;
+        this.#obstacleSpeed = 12;
         this.#obstacleSpacingZ = 5;
         this.#nextObstacleSpawnZ = -5;
         this.#obstacleSpawnFieldLength = 60;
@@ -336,7 +336,7 @@ export default class Gameplay {
      * @param {number} deltaTime
      */
     #update(deltaTime) {
-        this.#obstacleOffsetX += this.#inputX * 20 * deltaTime;
+        this.#obstacleOffsetX += this.#inputX * 25 * deltaTime;
 
         this.#updateObstacles(deltaTime);
 
@@ -404,7 +404,7 @@ export default class Gameplay {
             this.#calibrateOrientation();
         }
 
-        this.#inputX = THREE.MathUtils.clamp((event.beta - this.#initialOrientationBeta) / 30, -1, 1);
+        this.#inputX = THREE.MathUtils.clamp((event.beta - this.#initialOrientationBeta) / 25, -1, 1);
     };
 
 

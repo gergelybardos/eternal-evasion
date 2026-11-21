@@ -1,6 +1,9 @@
 .screen--display-setup {
 }
 
-.display-setup-screen__tap-to-start-button {
+.screen--display-setup .button {
+  width: 220px;
+  padding: var(--space-3);
   border: 3px solid transparent;
+  font-size: 2rem;
 }

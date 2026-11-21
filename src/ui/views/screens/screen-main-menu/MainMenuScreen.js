@@ -33,7 +33,10 @@ export default class MainMenuScreen {
         this.#root = document.createElement('div');
         this.#root.className = 'screen screen--main-menu';
 
-        const title = document.createElement('h1');
+        const main = document.createElement('div');
+        main.className = 'main-menu-screen__main';
+
+        const title = document.createElement('span');
         title.className = 'main-menu-screen__title';
         title.textContent = 'Eternal Evasion';
 
@@ -46,6 +49,9 @@ export default class MainMenuScreen {
         this.#startGameButton.textContent = 'Start Game';
         this.#startGameButton.addEventListener('pointerup', this.#onStartGameRequest);
 
+        const footer = document.createElement('div');
+        footer.className = 'main-menu-screen__footer';
+
         const copyrightNote = document.createElement('span');
         copyrightNote.className = 'main-menu-screen__copyright-note';
         copyrightNote.textContent = 'Copyright © 2026 Gergely Bárdos';
@@ -56,10 +62,14 @@ export default class MainMenuScreen {
 
         buttons.append(this.#startGameButton);
 
-        this.#root.append(title);
-        this.#root.append(buttons);
-        this.#root.append(copyrightNote);
-        this.#root.append(versionNote);
+        main.append(title);
+        main.append(buttons);
+
+        footer.append(copyrightNote);
+        footer.append(versionNote);
+
+        this.#root.append(main);
+        this.#root.append(footer);
 
         container.replaceChildren(this.#root);
     }

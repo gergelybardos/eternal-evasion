@@ -1,5 +1,6 @@
 import './assets/styles/main.css';
 
+import DisplaySetupState from './states/DisplaySetupState.js';
 import GameplayState from './states/GameplayState.js';
 import MainMenuState from './states/MainMenuState.js';
 import StateManager from './systems/StateManager.js';
@@ -76,10 +77,19 @@ export default class Game {
 
         this.#initStates();
 
-        this.#stateManager.switchState(States.MAIN_MENU);
+        this.#stateManager.switchState(this.#device.isMobile ? States.DISPLAY_SETUP : States.MAIN_MENU);
     }
 
     #initStates() {
+        if (this.#device.isMobile) {
+            this.#stateManager.addState(new DisplaySetupState({
+                device: this.#device,
+                container: this.#container,
+                stateManager: this.#stateManager,
+                uiManager: this.#uiManager,
+            }));
+        }
+
         this.#stateManager.addState(new MainMenuState({
             stateManager: this.#stateManager,
             uiManager: this.#uiManager,

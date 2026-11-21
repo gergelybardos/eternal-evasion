@@ -154,8 +154,6 @@ export default class Gameplay {
             return;
         }
 
-        await this.#configureMobileDisplay();
-
         this.#init();
 
         this.#started = true;
@@ -348,26 +346,6 @@ export default class Gameplay {
 
     #render() {
         this.#renderer.render(this.#scene, this.#camera);
-    }
-
-    /**
-     * @returns {Promise<void>}
-     */
-    async #configureMobileDisplay() {
-        if (!this.#device.isMobile) {
-            return;
-        }
-
-        if (!this.#device.hasTouch) {
-            throw Error('Touch input is required on mobile devices.');
-        }
-
-        try {
-            await this.#container.requestFullscreen();
-            await screen.orientation.lock('landscape-primary');
-        } catch (error) {
-            throw new Error(error.message, {cause: error});
-        }
     }
 
     #resize() {

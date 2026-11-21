@@ -1,0 +1,18 @@
+.screen--gameplay {
+}
+
+.gameplay-screen__viewport {
+    width: 100%;
+    height: 100%;
+}
+
+.gameplay-screen__viewport canvas {
+    touch-action: none;
+}
+
+.gameplay-screen__exit-button {
+    position: absolute;
+    right: var(--space-7);
+    bottom: var(--space-7);
+    z-index: 1;
+}

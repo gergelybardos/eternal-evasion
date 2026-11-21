@@ -1,0 +1,72 @@
+@font-face {
+    font-family: Tiny5;
+    src: url('../fonts/Tiny5/Tiny5-Thin.ttf');
+    font-weight: 100;
+}
+
+@font-face {
+    font-family: Tiny5;
+    src: url('../fonts/Tiny5/Tiny5-ExtraLight.ttf');
+    font-weight: 200;
+}
+
+@font-face {
+    font-family: Tiny5;
+    src: url('../fonts/Tiny5/Tiny5-Light.ttf');
+    font-weight: 300;
+}
+
+@font-face {
+    font-family: Tiny5;
+    src: url('../fonts/Tiny5/Tiny5-Regular.ttf');
+    font-weight: 400;
+}
+
+@font-face {
+    font-family: Tiny5;
+    src: url('../fonts/Tiny5/Tiny5-Medium.ttf');
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: Tiny5;
+    src: url('../fonts/Tiny5/Tiny5-SemiBold.ttf');
+    font-weight: 600;
+}
+
+@font-face {
+    font-family: Tiny5;
+    src: url('../fonts/Tiny5/Tiny5-Bold.ttf');
+    font-weight: 700;
+}
+
+@font-face {
+    font-family: Tiny5;
+    src: url('../fonts/Tiny5/Tiny5-ExtraBold.ttf');
+    font-weight: 800;
+}
+
+@font-face {
+    font-family: Tiny5;
+    src: url('../fonts/Tiny5/Tiny5-Black.ttf');
+    font-weight: 900;
+}
+
+:root {
+    --color-background: #0F0F0F;
+    --color-foreground: #F0F0F0;
+    --color-muted: #808080;
+
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-5: 1.5rem;
+    --space-6: 2rem;
+    --space-7: 3rem;
+
+    --font-family: Tiny5;
+
+    --transition-base: 0.3s ease;
+    --transition-fast: 0.2s ease;
+}

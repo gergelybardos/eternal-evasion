@@ -18,6 +18,9 @@ export default class Gameplay {
     /** @type {number} */
     #lastTime;
 
+    /** @type {number|null} */
+    #animationFrameId;
+
     // Scene setup
 
     /** @type {THREE.WebGLRenderer|null} */
@@ -31,6 +34,12 @@ export default class Gameplay {
 
     // Game objects
 
+    /** @type {THREE.Mesh|null} */
+    #groundMesh;
+
+    /** @type {THREE.Mesh|null} */
+    #playerMesh;
+
     /** @type {THREE.BoxGeometry|null} */
     #obstacleGeometry;
 
@@ -39,6 +48,36 @@ export default class Gameplay {
 
     /** @type {THREE.Mesh[]} */
     #obstacles;
+
+    /** @type {THREE.PointLight|null} */
+    #playerLight;
+
+    /** @type {THREE.DirectionalLight|null} */
+    #directionalLight;
+
+    // Input
+
+    /** @type {number} */
+    #inputX;
+
+    /** @type {boolean} */
+    #leftKeyPressed;
+
+    /** @type {boolean} */
+    #rightKeyPressed;
+
+    /** @type {number|null} */
+    #orientationBeta;
+
+    /** @type {number|null} */
+    #initialOrientationBeta;
+
+    // Event listeners and observers
+
+    /** @type {ResizeObserver|null} */
+    #resizeObserver;
+
+    // Gameplay
 
     /** @type {number} */
     #obstacleOffsetX;
@@ -61,34 +100,6 @@ export default class Gameplay {
     /** @type {number} */
     #obstacleSpawnFieldWidth;
 
-    /** @type {THREE.Mesh|null} */
-    #playerMesh;
-
-    /** @type {THREE.PointLight|null} */
-    #playerLight;
-
-    // Input
-
-    /** @type {number} */
-    #inputX;
-
-    /** @type {boolean} */
-    #leftKeyPressed;
-
-    /** @type {boolean} */
-    #rightKeyPressed;
-
-    /** @type {number|null} */
-    #orientationBeta;
-
-    /** @type {number|null} */
-    #initialOrientationBeta;
-
-    // Observers
-
-    /** @type {ResizeObserver|null} */
-    #resizeObserver;
-
     /**
      * @param {object} options
      * @param {object} options.device
@@ -109,6 +120,7 @@ export default class Gameplay {
 
         this.#started = false;
         this.#lastTime = 0;
+        this.#animationFrameId = null;
 
         // Scene setup
 
@@ -118,20 +130,13 @@ export default class Gameplay {
 
         // Game objects
 
+        this.#groundMesh = null;
+        this.#playerMesh = null;
         this.#obstacleGeometry = null;
         this.#obstacleMaterial = null;
         this.#obstacles = [];
-
-        this.#obstacleOffsetX = 0;
-        this.#obstacleSpeed = 12;
-        this.#obstacleSpacingZ = 5;
-        this.#nextObstacleSpawnZ = -5;
-        this.#obstacleSpawnFieldLength = 60;
-        this.#obstaclesPerRow = 10;
-        this.#obstacleSpawnFieldWidth = 100;
-
-        this.#playerMesh = null;
         this.#playerLight = null;
+        this.#directionalLight = null;
 
         // Input
 
@@ -144,6 +149,16 @@ export default class Gameplay {
         // Observers
 
         this.#resizeObserver = null;
+
+        // Gameplay
+
+        this.#obstacleOffsetX = 0;
+        this.#obstacleSpeed = 12;
+        this.#obstacleSpacingZ = 5;
+        this.#nextObstacleSpawnZ = -5;
+        this.#obstacleSpawnFieldLength = 60;
+        this.#obstaclesPerRow = 10;
+        this.#obstacleSpawnFieldWidth = 100;
     }
 
     /**
@@ -163,13 +178,73 @@ export default class Gameplay {
     }
 
     stop() {
-        if (!this.#started) {
-            return;
-        }
+        // Game loop
 
         this.#started = false;
 
-        // TODO
+        if (this.#animationFrameId !== null) {
+            cancelAnimationFrame(this.#animationFrameId);
+            this.#animationFrameId = null;
+        }
+
+        // Scene setup
+
+        this.#renderer?.dispose();
+        this.#renderer?.domElement.remove();
+        this.#renderer = null;
+
+        this.#scene?.clear();
+        this.#scene = null;
+
+        this.#camera = null;
+
+        // Game objects
+
+        this.#groundMesh?.geometry.dispose();
+        this.#groundMesh?.material.dispose();
+        this.#groundMesh = null;
+        this.#playerMesh?.geometry.dispose();
+        this.#playerMesh?.material.dispose();
+        this.#playerMesh = null;
+        this.#obstacleGeometry?.dispose();
+        this.#obstacleGeometry = null;
+        this.#obstacleMaterial?.dispose();
+        this.#obstacleMaterial = null;
+        this.#obstacles = [];
+        this.#playerLight?.shadow.dispose();
+        this.#playerLight = null;
+        this.#directionalLight?.shadow.dispose();
+        this.#directionalLight = null;
+
+        // Input
+
+        this.#inputX = 0;
+        this.#leftKeyPressed = false;
+        this.#rightKeyPressed = false;
+        this.#orientationBeta = null;
+        this.#initialOrientationBeta = null;
+
+        // Event listeners and observers
+
+        this.#resizeObserver?.disconnect();
+        this.#resizeObserver = null;
+
+        document.removeEventListener('visibilitychange', this.#handleVisibilityChange);
+
+        if (this.#device.isMobile) {
+            if (this.#device.hasDeviceOrientation) {
+                window.removeEventListener('deviceorientation', this.#handleDeviceOrientation);
+            }
+
+            this.#container?.removeEventListener('pointermove', this.#handlePointerMove);
+        } else {
+            window.removeEventListener('keydown', this.#handleKeyDown);
+            window.removeEventListener('keyup', this.#handleKeyUp);
+        }
+
+        // Gameplay
+
+        this.#obstacleOffsetX = 0;
     }
 
     #init() {
@@ -215,6 +290,22 @@ export default class Gameplay {
         // Game objects
         // -------------------------------------------------------------------------------------------------------------
 
+        // Ground
+
+        const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
+        const groundMaterial = new THREE.MeshStandardMaterial({
+            color: 0x404040,
+            roughness: 1,
+        });
+
+        this.#groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
+
+        this.#groundMesh.rotation.x = -Math.PI / 2;
+        this.#groundMesh.position.y = -0.5;
+        this.#groundMesh.receiveShadow = true;
+
+        this.#scene.add(this.#groundMesh);
+
         // Player
 
         const playerGeometry = new RoundedBoxGeometry(0.5, 0.5, 0.5, 3, 0.025);
@@ -243,22 +334,6 @@ export default class Gameplay {
             }
             this.#nextObstacleSpawnZ -= this.#obstacleSpacingZ;
         }
-
-        // Ground
-
-        const groundGeometry = new THREE.PlaneGeometry(1000, 1000);
-        const groundMaterial = new THREE.MeshStandardMaterial({
-            color: 0x404040,
-            roughness: 1,
-        });
-
-        const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
-
-        groundMesh.rotation.x = -Math.PI / 2;
-        groundMesh.position.y = -0.5;
-        groundMesh.receiveShadow = true;
-
-        this.#scene.add(groundMesh);
 
         // Lighting
 
@@ -309,11 +384,7 @@ export default class Gameplay {
                 window.addEventListener('deviceorientation', this.#handleDeviceOrientation);
             }
 
-            this.#container.addEventListener('pointermove', (event) => {
-                const clientRect = this.#container.getBoundingClientRect();
-
-                this.#inputX = ((event.clientX - clientRect.left) / clientRect.width) * 2 - 1;
-            });
+            this.#container.addEventListener('pointermove', this.#handlePointerMove);
         } else {
             window.addEventListener('keydown', this.#handleKeyDown);
             window.addEventListener('keyup', this.#handleKeyUp);
@@ -321,6 +392,10 @@ export default class Gameplay {
     }
 
     #mainLoop = () => {
+        if (!this.#started) {
+            return;
+        }
+
         const currentTime = performance.now();
         const deltaTime = Math.min((currentTime - this.#lastTime) / 1000, 0.05);
 
@@ -329,7 +404,7 @@ export default class Gameplay {
         this.#update(deltaTime);
         this.#render();
 
-        requestAnimationFrame(this.#mainLoop);
+        this.#animationFrameId = requestAnimationFrame(this.#mainLoop);
     };
 
     /**
@@ -388,6 +463,15 @@ export default class Gameplay {
         }
 
         this.#inputX = Number(this.#rightKeyPressed) - Number(this.#leftKeyPressed);
+    };
+
+    /**
+     * @type {(event: PointerEvent) => void}
+     */
+    #handlePointerMove = (event) => {
+        const clientRect = this.#container.getBoundingClientRect();
+
+        this.#inputX = ((event.clientX - clientRect.left) / clientRect.width) * 2 - 1;
     };
 
     /**

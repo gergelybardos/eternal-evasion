@@ -9,8 +9,20 @@
 }
 
 .gameplay-screen__viewport {
+  position: relative;
   width: 100%;
   height: 100%;
+}
+
+.gameplay-screen__vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+      ellipse at center,
+      transparent 35%,
+      var(--color-background) 100%
+  );
 }
 
 .gameplay-screen__viewport canvas {

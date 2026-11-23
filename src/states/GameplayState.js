@@ -84,6 +84,9 @@ export default class GameplayState extends State {
         });
 
         this.#uiManager.mountScreen(this.#screen);
+
+        // TODO: add to settings
+        this.#screen.enableVignette();
     }
 
     #exitToMainMenu() {

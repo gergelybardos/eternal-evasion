@@ -53,8 +53,8 @@
 }
 
 :root {
-  --color-background: #0F0F0F;
-  --color-foreground: #F0F0F0;
+  --color-background: #0f0f0f;
+  --color-foreground: #f0f0f0;
   --color-muted: #808080;
 
   --space-1: 0.25rem;

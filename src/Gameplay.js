@@ -1,5 +1,14 @@
 import * as THREE from 'three';
+import { AfterimagePass } from 'three/addons/postprocessing/AfterimagePass.js';
+import { BokehPass } from 'three/addons/postprocessing/BokehPass.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+import { FilmPass } from 'three/addons/postprocessing/FilmPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 
 export default class Gameplay {
     // Application
@@ -31,6 +40,9 @@ export default class Gameplay {
 
     /** @type {THREE.PerspectiveCamera|null} */
     #camera;
+
+    /** @type {EffectComposer|null} */
+    #composer;
 
     // Game objects
 
@@ -127,6 +139,7 @@ export default class Gameplay {
         this.#renderer = null;
         this.#scene = null;
         this.#camera = null;
+        this.#composer = null;
 
         // Game objects
 
@@ -153,7 +166,7 @@ export default class Gameplay {
         // Gameplay
 
         this.#obstacleOffsetX = 0;
-        this.#obstacleSpeed = 12;
+        this.#obstacleSpeed = 10;
         this.#obstacleSpacingZ = 5;
         this.#nextObstacleSpawnZ = -5;
         this.#obstacleSpawnFieldLength = 60;
@@ -197,6 +210,9 @@ export default class Gameplay {
         this.#scene = null;
 
         this.#camera = null;
+
+        this.#composer?.dispose();
+        this.#composer = null;
 
         // Game objects
 
@@ -254,9 +270,7 @@ export default class Gameplay {
 
         // Renderer
 
-        this.#renderer = new THREE.WebGLRenderer({
-            antialias: true,
-        });
+        this.#renderer = new THREE.WebGLRenderer();
 
         this.#renderer.setSize(
             this.#container.clientWidth,
@@ -285,6 +299,75 @@ export default class Gameplay {
         this.#camera.position.z = 4;
         this.#camera.position.y = 2;
         this.#camera.lookAt(0, 1.75, 0);
+
+        // Composer
+
+        this.#composer = new EffectComposer(this.#renderer);
+
+        this.#composer.addPass(new RenderPass(this.#scene, this.#camera));
+
+        // TODO: add to settings
+
+        const enableDepthOfField = false;
+        const enableMotionBlur = false;
+        const enableBloom = false;
+        const enableFilmGrain = true;
+        const enableAntiAliasing = false;
+
+        if (enableDepthOfField) {
+            const bokehPass = new BokehPass(this.#scene, this.#camera, {
+                focus: 10.0,
+                aperture: 0.00005,
+                maxblur: 0.01
+            });
+
+            this.#composer.addPass(bokehPass);
+        }
+
+        if (enableMotionBlur) {
+            const afterimagePass = new AfterimagePass(0.75);
+
+            this.#composer.addPass(afterimagePass);
+        }
+
+        if (enableBloom) {
+            const bloomPass = new UnrealBloomPass(
+                new THREE.Vector2(
+                    this.#container.clientWidth,
+                    this.#container.clientHeight
+                ),
+                0.3,
+                0.2,
+                0.4,
+            );
+
+            this.#composer.addPass(bloomPass);
+        }
+
+        if (enableFilmGrain) {
+            const filmPass = new FilmPass(
+                0.15,
+                0.025,
+                648,
+                false,
+            );
+
+            this.#composer.addPass(filmPass);
+        }
+
+        if (enableAntiAliasing) {
+            this.#composer.renderTarget1.samples = 4;
+            this.#composer.renderTarget2.samples = 4;
+
+            const fxaaPass = new ShaderPass(FXAAShader);
+
+            fxaaPass.material.uniforms.resolution.value.set(
+                1 / (this.#container.clientWidth * this.#renderer.getPixelRatio()),
+                1 / (this.#container.clientHeight * this.#renderer.getPixelRatio())
+            );
+        }
+
+        this.#composer.addPass(new OutputPass());
 
         // -------------------------------------------------------------------------------------------------------------
         // Game objects
@@ -330,7 +413,10 @@ export default class Gameplay {
 
         while (this.#nextObstacleSpawnZ >= -this.#obstacleSpawnFieldLength) {
             for (let i = 0; i < this.#obstaclesPerRow; i++) {
-                this.#spawnObstacle(THREE.MathUtils.randFloat(-this.#obstacleSpawnFieldWidth, this.#obstacleSpawnFieldWidth), this.#nextObstacleSpawnZ);
+                this.#spawnObstacle(
+                    THREE.MathUtils.randFloat(-this.#obstacleSpawnFieldWidth, this.#obstacleSpawnFieldWidth),
+                    this.#nextObstacleSpawnZ
+                );
             }
             this.#nextObstacleSpawnZ -= this.#obstacleSpacingZ;
         }
@@ -341,22 +427,22 @@ export default class Gameplay {
 
         this.#scene.add(ambientLight);
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
+        this.#directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
 
-        directionalLight.position.set(-5, 10, 5);
-        directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.set(2048, 2048);
-        directionalLight.shadow.camera.near = 0.5;
-        directionalLight.shadow.camera.far = 50;
-        directionalLight.shadow.camera.left = -20;
-        directionalLight.shadow.camera.right = 20;
-        directionalLight.shadow.camera.top = 20;
-        directionalLight.shadow.camera.bottom = -20;
-        directionalLight.shadow.bias = -0.0001;
+        this.#directionalLight.position.set(-5, 5, 5);
+        this.#directionalLight.castShadow = true;
+        this.#directionalLight.shadow.mapSize.set(2048, 2048);
+        this.#directionalLight.shadow.camera.near = 0.5;
+        this.#directionalLight.shadow.camera.far = 50;
+        this.#directionalLight.shadow.camera.left = -20;
+        this.#directionalLight.shadow.camera.right = 20;
+        this.#directionalLight.shadow.camera.top = 20;
+        this.#directionalLight.shadow.camera.bottom = -20;
+        this.#directionalLight.shadow.bias = -0.0001;
 
-        this.#scene.add(directionalLight);
+        this.#scene.add(this.#directionalLight);
 
-        this.#playerLight = new THREE.PointLight(0xffffff, 60, 30);
+        this.#playerLight = new THREE.PointLight(0xffffff, 40, 20);
 
         this.#playerLight.position.set(0, 5, -5);
         this.#playerLight.castShadow = true;
@@ -420,14 +506,19 @@ export default class Gameplay {
     }
 
     #render() {
-        this.#renderer.render(this.#scene, this.#camera);
+        this.#composer.render();
     }
 
     #resize() {
         const width = this.#container.clientWidth;
         const height = this.#container.clientHeight;
 
+        if (width === 0 || height === 0) {
+            return;
+        }
+
         this.#renderer.setSize(width, height);
+        this.#composer.setSize(width, height);
 
         this.#camera.aspect = width / height;
         this.#camera.updateProjectionMatrix();
@@ -540,7 +631,10 @@ export default class Gameplay {
 
         while (this.#nextObstacleSpawnZ >= -this.#obstacleSpawnFieldLength) {
             for (let i = 0; i < this.#obstaclesPerRow; i++) {
-                this.#spawnObstacle(THREE.MathUtils.randFloat(-this.#obstacleSpawnFieldWidth, this.#obstacleSpawnFieldWidth), this.#nextObstacleSpawnZ);
+                this.#spawnObstacle(
+                    THREE.MathUtils.randFloat(-this.#obstacleSpawnFieldWidth, this.#obstacleSpawnFieldWidth),
+                    this.#nextObstacleSpawnZ
+                );
             }
             this.#nextObstacleSpawnZ -= this.#obstacleSpacingZ;
         }
